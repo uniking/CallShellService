@@ -30,7 +30,7 @@ public class FileTransferClient {
      */
     public int execCmd(String cmd, boolean haveFile) {
         try {
-            System.out.println("to downloadFile");
+            //System.out.println("to downloadFile");
             URL url = new URL(cmdUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
@@ -71,7 +71,6 @@ public class FileTransferClient {
                 InputStream inputStream = connection.getInputStream();
                 byte[] buffer = new byte[128];
                 int len = inputStream.read(buffer);
-                System.out.println("read "+len);
                 fdir = new String(buffer, 0, len, StandardCharsets.UTF_8);
                 inputStream.close();
             }

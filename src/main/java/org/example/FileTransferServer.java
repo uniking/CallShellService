@@ -66,9 +66,11 @@ public class FileTransferServer {
             String uuid = exchange.getRequestHeaders().getFirst("X-UUID");
             String cmd = exchange.getRequestHeaders().getFirst("X-CMD");
             String haveFile = exchange.getRequestHeaders().getFirst("X-FILE");
+            boolean bHaveFile = false;
 
             //判断是否已经上传文件
             if(haveFile == null && haveFile.equals("HF")){
+                bHaveFile = true;
                 File dir = new File(uuid);
                 if(! dir.exists()){
                     exchange.sendResponseHeaders(201, 0);
@@ -78,6 +80,9 @@ public class FileTransferServer {
 
             //准备FileStatus
             FileStatus fileStatus = getFileStatus(uuid);
+            if(!bHaveFile){
+                fileStatus.workStatus = FileStatus.FILE_NOT_PROCESS;
+            }
 
             //根据状态执行
             switch (fileStatus.workStatus){
@@ -236,7 +241,7 @@ public class FileTransferServer {
             server.createContext("/download", new DownloadHandler());
             server.createContext("/cmd", new CmdHandler());
             server.createContext("/pwd", new PwdHandler());
-            server.createContext("/clear", new PwdHandler());
+            server.createContext("/clear", new ClearHandler());
             server.setExecutor(null);
             server.start();
             System.out.println("Server started on port " + port);

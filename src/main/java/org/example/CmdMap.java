@@ -11,12 +11,12 @@ public class CmdMap {
     public static CmdMap getInstance(){
         if(self == null){
             self = new CmdMap();
-            realCmd.put("ls", "ls");
-            realCmd.put("zip", "zip");
+            //realCmd.put("ls", "ls");
+            //realCmd.put("zip", "zip");
 
-            realCmd.put("tortoise", "./package.sh");
-            realCmd.put("isign_export_creds.sh", "./isign_export_creds.sh");
-            realCmd.put("iosPackage", "./msm_patch.sh");
+            realCmd.put("tortoise", "./tortoise/package.sh");
+            realCmd.put("isign_export_creds.sh", "./iosPackageTool/isign_export_creds.sh");
+            realCmd.put("iosPackage", "./iosPackageTool/msm_patch.sh");
         }
 
         return self;
