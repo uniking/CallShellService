@@ -136,13 +136,21 @@ public class Example {
         return bRet;
     }
 
+    public static void test(){
+        FileTransferClient fileTransferClient = new FileTransferClient("127.0.0.1", 8080);
+        fileTransferClient.uploadFile("tortoiseTest/test.apk");
+        fileTransferClient.execCmd("ls", true);
+    }
+
     public static void main(String[] args) {
 //        Example.android_package("120.46.65.127", 8000, "tortoiseTest/test.apk", "tortoiseTest/packaged.apk",
 //                "tortoiseTest/android.jks",
 //                "tortoiseTest/config.json",
 //                "tortoiseTest/emm-control.json");
 
-        Example.ios_package("120.46.65.127", 8000, "iosTest/iOSSandboxSDK.ipa", "iosTest/packaged.ipa",
-                "iosTest/123456.p12", "123456", "iosTest/embedded.mobileprovision", "");
+//        Example.ios_package("120.46.65.127", 8000, "iosTest/iOSSandboxSDK.ipa", "iosTest/packaged.ipa",
+//                "iosTest/123456.p12", "123456", "iosTest/embedded.mobileprovision", "");
+
+        Example.test();
     }
 }

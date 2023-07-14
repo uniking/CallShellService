@@ -29,11 +29,22 @@ public class FileTransferServer {
         resourceLock.release();
     }
 
+    public static FileStatus getFileStatus(String uuid){
+        FileStatus fileStatus = fileStatusMap.get(uuid);
+        if(fileStatus == null){
+            fileStatus = new FileStatus(uuid);
+            fileStatusMap.put(uuid, fileStatus);
+        }
+        return fileStatus;
+    }
+
     static class UploadHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String uuid = exchange.getRequestHeaders().getFirst("X-UUID");
-            if(uuid == null || uuid.length() == 0){
+            String fileName = exchange.getRequestHeaders().getFirst("X-File-Name");
+            if(uuid == null || uuid.length() == 0
+                    || fileName == null || fileName.length() == 0){
                 Utils.sendResponse(exchange, RESPONSE_OTHER, "uuid error");
                 return;
             }
@@ -50,20 +61,19 @@ public class FileTransferServer {
                 }
 
                 // 获取文件内容并保存到目录
-                String fileName = exchange.getRequestHeaders().getFirst("X-File-Name");
                 System.out.println(uuid + ", upload, "+fileName);
                 Path filePath = directory.toPath().resolve(fileName);
                 try (InputStream inputStream = exchange.getRequestBody()) {
                     Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
                 }
 
-                // 响应客户端
-                Utils.sendResponse(exchange, RESPONSE_OK, "File uploaded successfully");
-
                 //更新fileStatus
                 getFileStatus(uuid).uploadFileNum++;
-            } finally {
-                // 释放资源锁
+
+                // 响应客户端
+                Utils.sendResponse(exchange, RESPONSE_OK, "File uploaded successfully");
+            }catch (Exception e){
+                Utils.sendResponse(exchange, RESPONSE_OTHER, "uuid error");
             }
         }
     }
@@ -77,17 +87,19 @@ public class FileTransferServer {
             String haveFile = exchange.getRequestHeaders().getFirst("X-FILE");
             boolean bHaveFile = false;
 
-            if(uuid == null || cmd == null || haveFile == null){
+            if(uuid == null || uuid.length() == 0 ||
+                    cmd == null || cmd.length() == 0 ||
+                    haveFile == null || haveFile.length() == 0){
                 Utils.sendResponse(exchange, RESPONSE_OTHER, "parameters error");
                 return;
             }
 
             //判断是否已经上传文件
-            if(haveFile == null && haveFile.equals("HF")){
+            if(haveFile.equals("HF")){
                 bHaveFile = true;
-                File dir = new File(uuid);
-                if(! dir.exists()){
-                    exchange.sendResponseHeaders(201, 0);
+                File directory = new File(Paths.get(VROOT, uuid).toString());
+                if(! directory.exists()){
+                    exchange.sendResponseHeaders(RESPONSE_OTHER, 0);
                     return;
                 }
             }
@@ -176,15 +188,6 @@ public class FileTransferServer {
     202 正在处理文件, 或其他问题
      */
     static class DownloadHandler implements HttpHandler {
-        public static long getFileSize(String filePath) {
-            File file = new File(filePath);
-            if (file.exists() && file.isFile()) {
-                return file.length();
-            } else {
-                return -1; // 文件不存在或不是一个有效的文件
-            }
-        }
-
         @Override
         public void handle(HttpExchange exchange) throws IOException {
 
@@ -210,7 +213,7 @@ public class FileTransferServer {
                         String fileName = exchange.getRequestHeaders().getFirst("X-File-Name");
                         System.out.println(uuid+", download, "+fileName);
                         if(new File(fileName).exists()){
-                            long fileSize = getFileSize(fileName);
+                            long fileSize = Utils.getFileSize(fileName);
                             exchange.sendResponseHeaders(RESPONSE_OK, fileSize);
 
                             // 设置响应头
@@ -282,14 +285,5 @@ public class FileTransferServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public static FileStatus getFileStatus(String uuid){
-        FileStatus fileStatus = fileStatusMap.get(uuid);
-        if(fileStatus == null){
-            fileStatus = new FileStatus(uuid);
-            fileStatusMap.put(uuid, fileStatus);
-        }
-        return fileStatus;
     }
 }

@@ -120,4 +120,13 @@ public class Utils {
             e.printStackTrace();
         }
     }
+
+    public static long getFileSize(String filePath) {
+        File file = new File(filePath);
+        if (file.exists() && file.isFile()) {
+            return file.length();
+        } else {
+            return -1; // 文件不存在或不是一个有效的文件
+        }
+    }
 }
