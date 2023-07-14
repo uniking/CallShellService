@@ -39,9 +39,7 @@ public class Example {
         while(true){
             try {
                 int code = fileTransferClient.execCmd(cmd, true);
-                if(code != 200){
-                    ;//System.out.println("没有资源");
-                }else{
+                if(code != FileTransferServer.RESPONSE_WAITING){
                     break;
                 }
                 Thread.sleep(5000);
@@ -55,14 +53,11 @@ public class Example {
         while (true) {
             try {
                 int code = fileTransferClient.downloadFile(fileTransferClient.getFileDirectory()+"/packaged.apk", newApkPath);
-                if(code == 200 || code == 201){
-                    ;//System.out.println("下载结束");
-                    if(code == 200){
+                if(code != FileTransferServer.RESPONSE_WAITING){
+                    if(code == FileTransferServer.RESPONSE_OK){
                         bRet = true;
                     }
                     break;
-                }else{
-                    ;//System.out.println("正在处理中");
                 }
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
@@ -76,7 +71,7 @@ public class Example {
     }
 
     public static boolean ios_package(String ip, int port, String ipa, String outIpa, String p12, String passwd, String provision, String opt){
-        boolean bResult = false;
+        boolean bRet = false;
         //每处理一次文件, 需要重新new
         FileTransferClient fileTransferClient = new FileTransferClient(ip, port);
 
@@ -95,9 +90,7 @@ public class Example {
             try {
                 String cmd = String.format("isign_export_creds.sh %s/cer.p12 %s %s", fileDir, fileDir, passwd);
                 int code = fileTransferClient.execCmd(cmd, true);
-                if(code != 200){
-                    ;//System.out.println("没有资源");
-                }else{
+                if(code != FileTransferServer.RESPONSE_WAITING){
                     break;
                 }
                 Thread.sleep(5000);
@@ -110,9 +103,7 @@ public class Example {
             try {
                 String cmd = String.format("iosPackage %s -c %s -f %s/%s -o %s/%s", opt, fileDir, fileDir, unpackageName, fileDir, packageName);
                 int code = fileTransferClient.execCmd(cmd, false);
-                if(code != 200){
-                    ;//System.out.println("没有资源");
-                }else{
+                if(code != FileTransferServer.RESPONSE_WAITING){
                     break;
                 }
                 Thread.sleep(5000);
@@ -126,14 +117,11 @@ public class Example {
         while (true) {
             try {
                 int code = fileTransferClient.downloadFile(fileTransferClient.getFileDirectory()+"/"+packageName, outIpa);
-                if(code == 200 || code == 201){
-                    ;//System.out.println("下载结束");
-                    if(code == 200){
-                        bResult = true;
+                if(code != FileTransferServer.RESPONSE_WAITING){
+                    if(code == FileTransferServer.RESPONSE_OK){
+                        bRet = true;
                     }
                     break;
-                }else{
-                    ;//System.out.println("正在处理中");
                 }
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
@@ -145,17 +133,8 @@ public class Example {
 
         fileTransferClient.clearFileDirectory();
 
-        return bResult;
+        return bRet;
     }
-
-    public static void test(String ip, int port){
-        FileTransferClient fileTransferClient = new FileTransferClient(ip, port);
-
-        fileTransferClient.uploadFile("iosTest/iOSSandboxSDK.ipa");
-
-        fileTransferClient.clearFileDirectory();
-    }
-
 
     public static void main(String[] args) {
 //        Example.android_package("120.46.65.127", 8000, "tortoiseTest/test.apk", "tortoiseTest/packaged.apk",
@@ -163,7 +142,7 @@ public class Example {
 //                "tortoiseTest/config.json",
 //                "tortoiseTest/emm-control.json");
 
-//        Example.ios_package("120.46.65.127", 8000, "iosTest/iOSSandboxSDK.ipa", "iosTest/packaged.ipa",
-//                "iosTest/123456.p12", "123456", "iosTest/embedded.mobileprovision", "");
+        Example.ios_package("120.46.65.127", 8000, "iosTest/iOSSandboxSDK.ipa", "iosTest/packaged.ipa",
+                "iosTest/123456.p12", "123456", "iosTest/embedded.mobileprovision", "");
     }
 }

@@ -20,6 +20,11 @@ public class FileTransferServer {
     static String currentDirectory;
     static String fileDirectory;
 
+    public static final int RESPONSE_OK = 200;
+    public static final int RESPONSE_ERROR = 201;
+    public static final int RESPONSE_WAITING = 202;
+    public static final int RESPONSE_OTHER = 203;
+
     public static void releaseResource(){
         resourceLock.release();
     }
@@ -28,6 +33,10 @@ public class FileTransferServer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String uuid = exchange.getRequestHeaders().getFirst("X-UUID");
+            if(uuid == null || uuid.length() == 0){
+                Utils.sendResponse(exchange, RESPONSE_OTHER, "uuid error");
+                return;
+            }
 
             try {
                 // 创建目录
@@ -49,7 +58,7 @@ public class FileTransferServer {
                 }
 
                 // 响应客户端
-                Utils.sendResponse(exchange, 200, "File uploaded successfully");
+                Utils.sendResponse(exchange, RESPONSE_OK, "File uploaded successfully");
 
                 //更新fileStatus
                 getFileStatus(uuid).uploadFileNum++;
@@ -67,6 +76,11 @@ public class FileTransferServer {
             String cmd = exchange.getRequestHeaders().getFirst("X-CMD");
             String haveFile = exchange.getRequestHeaders().getFirst("X-FILE");
             boolean bHaveFile = false;
+
+            if(uuid == null || cmd == null || haveFile == null){
+                Utils.sendResponse(exchange, RESPONSE_OTHER, "parameters error");
+                return;
+            }
 
             //判断是否已经上传文件
             if(haveFile == null && haveFile.equals("HF")){
@@ -90,28 +104,28 @@ public class FileTransferServer {
                     {
                         String realCmd = CmdMap.getInstance().replaceCmd(cmd, uuid);
                         if(realCmd == null){
-                            exchange.sendResponseHeaders(205, 0);
+                            exchange.sendResponseHeaders(RESPONSE_OTHER, 0);
                             return;
                         }
 
                         if(resourceLock.acquire()){
                             fileStatus.cmd = realCmd;
                             fileStatus.executeCmd();
-                            exchange.sendResponseHeaders(200, 0);
+                            exchange.sendResponseHeaders(RESPONSE_OK, 0);
                             return;
                         }else{
-                            exchange.sendResponseHeaders(204, 0);
+                            exchange.sendResponseHeaders(RESPONSE_WAITING, 0);
                             return;
                         }
                     }
                 case FileStatus.FILE_PROCESSING:
-                    exchange.sendResponseHeaders(201, 0);
+                    exchange.sendResponseHeaders(RESPONSE_OTHER, 0);
                     break;
                 case FileStatus.FILE_PROCESS_FINISH:
-                    exchange.sendResponseHeaders(200, 0);
+                    exchange.sendResponseHeaders(RESPONSE_OK, 0);
                     break;
                 default:
-                    exchange.sendResponseHeaders(205, 0);
+                    exchange.sendResponseHeaders(RESPONSE_OTHER, 0);
                     break;
             }
         }
@@ -122,7 +136,12 @@ public class FileTransferServer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String uuid = exchange.getRequestHeaders().getFirst("X-UUID");
-            Utils.sendResponse(exchange, 200, Paths.get(fileDirectory, uuid).toString());
+            if(uuid == null || uuid.length() == 0){
+                Utils.sendResponse(exchange, RESPONSE_OTHER, "uuid error");
+                return;
+            }
+
+            Utils.sendResponse(exchange, RESPONSE_OK, Paths.get(fileDirectory, uuid).toString());
         }
     }
 
@@ -130,12 +149,23 @@ public class FileTransferServer {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            String uuid = exchange.getRequestHeaders().getFirst("X-UUID");
-            if(uuid != null && uuid.length() != 0){
-                String dir = Paths.get(fileDirectory, uuid).toString();
-                Utils.deleteDirectory(new File(dir));
+            try {
+                String uuid = exchange.getRequestHeaders().getFirst("X-UUID");
+                if(uuid == null || uuid.length() == 0){
+                    Utils.sendResponse(exchange, RESPONSE_OTHER, "uuid error");
+                    return;
+                }
+
+                if(uuid != null && uuid.length() != 0){
+                    String dir = Paths.get(fileDirectory, uuid).toString();
+                    System.out.println(uuid+", clear, "+dir);
+                    Utils.deleteDirectory(new File(dir));
+                }
+            }catch (Exception e){
+                e.printStackTrace();
             }
-            Utils.sendResponse(exchange, 200);
+
+            Utils.sendResponse(exchange, RESPONSE_OK);
         }
     }
 
@@ -160,16 +190,20 @@ public class FileTransferServer {
 
             try {
                 String uuid = exchange.getRequestHeaders().getFirst("X-UUID");
+                if(uuid == null || uuid.length() == 0){
+                    Utils.sendResponse(exchange, RESPONSE_OTHER, "uuid error");
+                    return;
+                }
 
-                switch (fileStatusMap.get(uuid).workStatus){
+                switch (getFileStatus(uuid).workStatus){
                     case FileStatus.FILE_NOT_PROCESS:
-                        Utils.sendResponse(exchange, 202, "not exec cmd");
+                        Utils.sendResponse(exchange, RESPONSE_OTHER, "not exec cmd");
                         break;
                     case FileStatus.FILE_PROCESSING:
-                        Utils.sendResponse(exchange, 202, "pless wait, file is processing");
+                        Utils.sendResponse(exchange, RESPONSE_WAITING, "pless wait, file is processing");
                         break;
                     case FileStatus.FILE_PROCESS_ERROR:
-                        Utils.sendResponse(exchange, 201, "file process error");
+                        Utils.sendResponse(exchange, RESPONSE_ERROR, "file process error");
                         break;
                     case FileStatus.FILE_PROCESS_FINISH:
                     {
@@ -177,7 +211,7 @@ public class FileTransferServer {
                         System.out.println(uuid+", download, "+fileName);
                         if(new File(fileName).exists()){
                             long fileSize = getFileSize(fileName);
-                            exchange.sendResponseHeaders(200, fileSize);
+                            exchange.sendResponseHeaders(RESPONSE_OK, fileSize);
 
                             // 设置响应头
                             exchange.getResponseHeaders().set("Content-Type", "application/octet-stream");
@@ -196,13 +230,13 @@ public class FileTransferServer {
                                 }
                             }
                         }else{
-                            Utils.sendResponse(exchange, 202, "file no exist");
+                            Utils.sendResponse(exchange, RESPONSE_ERROR, "file no exist");
                         }
 
                     }
                         break;
                     default:
-                        Utils.sendResponse(exchange, 202, "unknow file status");
+                        Utils.sendResponse(exchange, RESPONSE_OTHER, "unknow file status");
                         break;
                 }
             }catch (Exception e){
@@ -256,7 +290,6 @@ public class FileTransferServer {
             fileStatus = new FileStatus(uuid);
             fileStatusMap.put(uuid, fileStatus);
         }
-
         return fileStatus;
     }
 }

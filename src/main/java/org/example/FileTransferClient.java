@@ -131,8 +131,8 @@ public class FileTransferClient {
             outputStream.close();
 
             // 获取响应代码
-            int responseCode = connection.getResponseCode();
-            System.out.println("Upload Response Code: " + responseCode);
+            //int responseCode = connection.getResponseCode();
+            //System.out.println("Upload Response Code: " + responseCode);
 
             // 关闭连接
             connection.disconnect();
@@ -146,7 +146,7 @@ public class FileTransferClient {
      */
     public int downloadFile(String fileName, String newFilePath) {
         try {
-            System.out.println("to downloadFile");
+            //System.out.println("to downloadFile");
             URL url = new URL(downloadUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
@@ -156,8 +156,8 @@ public class FileTransferClient {
             // 获取响应代码
             int responseCode = connection.getResponseCode();
 
-            if (responseCode == 200) {
-                System.out.println("Download Response Code: " + responseCode);
+            if (responseCode == FileTransferServer.RESPONSE_OK) {
+                //System.out.println("Download Response Code: " + responseCode);
 
                 // 读取响应内容并保存为文件
                 Utils.createFilePath(newFilePath);
@@ -175,7 +175,7 @@ public class FileTransferClient {
                 connection.disconnect();
                 return responseCode;
             } else {
-                System.out.println("responseCode=" + responseCode + ", " + connection.getResponseMessage());
+                //System.out.println("responseCode=" + responseCode + ", " + connection.getResponseMessage());
                 // 关闭连接
                 connection.disconnect();
                 return responseCode;
