@@ -107,6 +107,7 @@ public class FileTransferServer {
             //准备FileStatus
             FileStatus fileStatus = getFileStatus(uuid);
             if(!bHaveFile){
+                //没文件, 不关注文件状态
                 fileStatus.workStatus = FileStatus.FILE_NOT_PROCESS;
             }
 

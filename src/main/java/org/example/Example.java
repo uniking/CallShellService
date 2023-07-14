@@ -138,8 +138,9 @@ public class Example {
 
     public static void test(){
         FileTransferClient fileTransferClient = new FileTransferClient("127.0.0.1", 8080);
-        fileTransferClient.uploadFile("tortoiseTest/test.apk");
+        fileTransferClient.uploadFile("tortoiseTest/android.jks");
         fileTransferClient.execCmd("ls", true);
+        fileTransferClient.clearFileDirectory();
     }
 
     public static void main(String[] args) {
@@ -148,9 +149,8 @@ public class Example {
 //                "tortoiseTest/config.json",
 //                "tortoiseTest/emm-control.json");
 
-//        Example.ios_package("120.46.65.127", 8000, "iosTest/iOSSandboxSDK.ipa", "iosTest/packaged.ipa",
-//                "iosTest/123456.p12", "123456", "iosTest/embedded.mobileprovision", "");
+        Example.ios_package("127.0.0.1", 8080, "iosTest/iOSSandboxSDK.ipa", "iosTest/packaged.ipa",
+                "iosTest/123456.p12", "123456", "iosTest/embedded.mobileprovision", "");
 
-        Example.test();
     }
 }
